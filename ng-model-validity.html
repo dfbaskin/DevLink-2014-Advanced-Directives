@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="myApp">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Directives and ngModel</title>
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="page-header">
+            <h1>DevLink 2014 - Advanced AngularJS Directives <small>Source Code</small></h1>
+            <p>Dave F. Baskin - MIT License</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="well">
+                    <div class="row">
+                        <div class="col-md-7">
+                            <h4>Directives and ngModel - Validity</h4>
+                        </div>
+                        <div class="col-md-5 text-right">
+                            <a class="btn" href="./">Home</a>
+
+                            <a class="btn" href="ng-model-parser.html"><span class="glyphicon glyphicon-arrow-left"></span></a>
+
+                            <a class="btn" href="ng-model-view-value.html"><span class="glyphicon glyphicon-arrow-right"></span></a>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" ng-controller="modelExampleCtrl as ctrl">
+            <div class="col-md-offset-1 col-md-10">
+
+                <form role="form" name="dateForm">
+                    <div class="form-group" ng-class="{'has-error': dateForm.exampleDate.$invalid}">
+                        <label for="exampleDate">Date Value</label>
+                        <input type="text" class="form-control" id="exampleDate" name="exampleDate" placeholder="Enter Date" ng-model="ctrl.dateValue" required my-model-example-three>
+                        <p class="help-block" ng-show="dateForm.exampleDate.$error.dateNotRecognized">
+                            Date not recognized.
+                        </p>
+                        <p class="help-block" ng-show="dateForm.exampleDate.$error.required">
+                            Date must be provided.
+                        </p>
+                    </div>
+                    <div class="form-group">
+                        Date Value: {{ctrl.dateValue}}
+                    </div>
+                    <div class="form-group">
+                        dateForm.exampleDate.$error = {{dateForm.exampleDate.$error | json}}
+                    </div>
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/sugar/1.4.1/sugar.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular-sanitize.min.js"></script>
+    <script>
+        (function() {
+            var myApp = angular.module('myApp', []);
+            myApp.controller('modelExampleCtrl', [ModelExampleController]);
+
+            function ModelExampleController() {
+                var _this = this;
+                _this.dateValue = new Date();
+                _this.resetDate = function() {
+                    _this.dateValue = new Date();
+                };
+            }
+            myApp.directive('myModelExampleThree', [MyModelExampleThree]);
+
+            function MyModelExampleThree() {
+                return {
+                    restrict: 'A',
+                    require: '?ngModel',
+                    link: function(scope, iElement, iAttrs, ngModel) {
+                        var errorKey = "dateNotRecognized";
+                        var dateValue;
+                        if (!ngModel) {
+                            return; // If no ng-model, then do nothing.
+                        }
+                        ngModel.$formatters.push(function(value) {
+                            if (value) {
+                                dateValue = Date.create(value);
+                                if (dateValue.isValid()) {
+                                    ngModel.$setValidity(errorKey, true);
+                                    return dateValue.full();
+                                }
+                            }
+                            ngModel.$setValidity(errorKey, false);
+                            return "Date is not Available";
+                        });
+                        ngModel.$parsers.push(function(value) {
+                            dateValue = Date.create(value);
+                            if (dateValue.isValid()) {
+                                ngModel.$setValidity(errorKey, true);
+                                return dateValue;
+                            } else {
+                                ngModel.$setValidity(errorKey, false);
+                                return null;
+                            }
+                        });
+                    }
+                };
+            }
+        })();
+    </script>
+</body>
+
+</html>

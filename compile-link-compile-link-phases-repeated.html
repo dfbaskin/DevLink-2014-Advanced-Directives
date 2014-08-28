@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="myApp">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Directives Compile and Link</title>
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="page-header">
+            <h1>DevLink 2014 - Advanced AngularJS Directives <small>Source Code</small></h1>
+            <p>Dave F. Baskin - MIT License</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="well">
+                    <div class="row">
+                        <div class="col-md-7">
+                            <h4>Directives Compile and Link - Repeated Directive</h4>
+                        </div>
+                        <div class="col-md-5 text-right">
+                            <a class="btn" href="./">Home</a>
+
+                            <a class="btn" href="compile-link-compile-link-phases.html"><span class="glyphicon glyphicon-arrow-left"></span></a>
+
+                            <a class="btn" href="compile-link-compile-link-form-1.html"><span class="glyphicon glyphicon-arrow-right"></span></a>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" ng-controller="compileLinkCtrl as ctrl">
+            <div class="col-md-offset-1 col-md-10">
+                <div>
+                    <div ng-repeat="v in [1, 2, 3]" my-compile-link-two></div>
+                </div>
+                <div>
+                    <div ng-repeat="m in ctrl.messageList">{{m.idx}}. {{m.msg}}</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/sugar/1.4.1/sugar.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular-sanitize.min.js"></script>
+    <script>
+        (function() {
+            var myApp = angular.module('myApp', []);
+            var nextMsgIdx = 0,
+                msgLst = [];
+            msgLst.add = function(msg) {
+                this.push({
+                    idx: nextMsgIdx += 1,
+                    msg: msg
+                });
+            };
+            myApp.value('messageList', msgLst);
+            myApp.controller('compileLinkCtrl', ['messageList', CompileLinkController]);
+
+            function CompileLinkController(messageList) {
+                this.messageList = messageList;
+            }
+            myApp.directive('myCompileLinkTwo', ['messageList', MyCompileLinkTwo]);
+
+            function MyCompileLinkTwo(messageList) {
+                return {
+                    compile: function(tElement, tAttrs) {
+                        messageList.add('[Compile Function]');
+                        angular
+                            .element("<p>Simple Compile/Link Directive</p>")
+                            .appendTo(tElement);
+                        return {
+                            pre: function(scope, iElement, iAttrs) {
+                                messageList.add('[Pre-Link Function]');
+                            },
+                            post: function(scope, iElement, iAttrs) {
+                                messageList.add('[Post-Link Function]');
+                            }
+                        }
+                    }
+                };
+            }
+        })();
+    </script>
+</body>
+
+</html>

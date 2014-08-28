@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="myApp">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Directives and ngModel</title>
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="page-header">
+            <h1>DevLink 2014 - Advanced AngularJS Directives <small>Source Code</small></h1>
+            <p>Dave F. Baskin - MIT License</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="well">
+                    <div class="row">
+                        <div class="col-md-7">
+                            <h4>Directives and ngModel - Custom Render</h4>
+                        </div>
+                        <div class="col-md-5 text-right">
+                            <a class="btn" href="./">Home</a>
+
+                            <a class="btn" href="ng-model-view-value.html"><span class="glyphicon glyphicon-arrow-left"></span></a>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" ng-controller="modelExampleCtrl as ctrl">
+            <div class="col-md-offset-1 col-md-10">
+
+                <style>
+                    .date-directive {
+                        width: 100%;
+                        height: 60px;
+                        background: #EEE;
+                        padding: 6px;
+                        font-weight: bold;
+                        text-align: center;
+                        margin-bottom: 40px;
+                    }
+                </style>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <my-model-example-five ng-model="ctrl.dateValue">
+                        </my-model-example-five>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 text-center">
+                        Date Value: {{ctrl.dateValue}}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/sugar/1.4.1/sugar.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular-sanitize.min.js"></script>
+    <script>
+        (function() {
+            var myApp = angular.module('myApp', []);
+            myApp.controller('modelExampleCtrl', [ModelExampleController]);
+
+            function ModelExampleController() {
+                var _this = this;
+                _this.dateValue = new Date();
+                _this.resetDate = function() {
+                    _this.dateValue = new Date();
+                };
+            }
+            myApp.directive('myModelExampleFive', [MyModelExampleFive]);
+
+            function MyModelExampleFive() {
+                return {
+                    restrict: 'E',
+                    template: '<div class="date-directive" tabindex="999"></div>',
+                    replace: true,
+                    require: 'ngModel',
+                    link: function(scope, iElement, iAttrs, ngModel) {
+                        var dateValue;
+                        ngModel.$formatters.push(function(value) {
+                            if (value) {
+                                dateValue = Date.create(value);
+                                if (dateValue.isValid()) {
+                                    return dateValue.full();
+                                }
+                            }
+                            return "Date is not Available";
+                        });
+                        ngModel.$parsers.push(function(value) {
+                            dateValue = Date.create(value);
+                            if (dateValue.isValid()) {
+                                return dateValue;
+                            } else {
+                                return null;
+                            }
+                        });
+                        iElement.on('keypress', function(evt) {
+                            var dateOffs;
+                            if (evt.which === 43) {
+                                dateOffs = 1; // Add one day
+                            } else if (evt.which === 45) {
+                                dateOffs = -1; // Subtract one day
+                            }
+                            if (dateOffs && ngModel.$viewValue) {
+                                evt.preventDefault();
+                                dateValue = Date.create(ngModel.$viewValue);
+                                if (dateValue.isValid()) {
+                                    dateValue = dateValue.addDays(dateOffs);
+                                    scope.$apply(function() {
+                                        ngModel.$setViewValue(dateValue);
+                                    });
+                                    ngModel.$render();
+                                }
+                            }
+                        });
+                        iElement.on('mousedown', function(evt) {
+                            var dateOffs, divOffs, offsetX;
+                            evt.preventDefault();
+                            divOffs = iElement.offset();
+                            offsetX = evt.pageX - divOffs.left;
+                            dateOffs = Math.floor(
+                                offsetX / iElement.width() * (365 * 2) - 365
+                            );
+                            dateValue = Date.create();
+                            if (dateValue.isValid()) {
+                                dateValue = dateValue.addDays(dateOffs);
+                                scope.$apply(function() {
+                                    ngModel.$setViewValue(dateValue);
+                                });
+                                ngModel.$render();
+                            }
+                        });
+                        ngModel.$render = function() {
+                            iElement.text(
+                                ngModel.$isEmpty(ngModel.$viewValue) ? '' : ngModel.$viewValue);
+                        };
+                    }
+                };
+            }
+        })();
+    </script>
+</body>
+
+</html>

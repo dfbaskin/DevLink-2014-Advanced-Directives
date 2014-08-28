@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="myApp">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Drag-and-Drop Example</title>
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="page-header">
+            <h1>DevLink 2014 - Advanced AngularJS Directives <small>Source Code</small></h1>
+            <p>Dave F. Baskin - MIT License</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="well">
+                    <div class="row">
+                        <div class="col-md-7">
+                            <h4>Drag-and-Drop Example - Using Scope</h4>
+                        </div>
+                        <div class="col-md-5 text-right">
+                            <a class="btn" href="./">Home</a>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" ng-controller="dragDropExampleCtrl as ctrl">
+            <div class="col-md-offset-1 col-md-10">
+
+                <style>
+                    span.label {
+                        margin-right: 10px;
+                        cursor: pointer;
+                    }
+                    li.drag-over {
+                        background-color: #f9ee98;
+                    }
+                    span.drag {
+                        opacity: 0.25;
+                    }
+                </style>
+
+                <ul>
+                    <li ng-repeat="item in ctrl.dataItems" my-droppable can-drop="ctrl.canDropItem(data)" on-drop="ctrl.dropItem(data)" drop-data="item">
+                        <span class="label label-default" my-draggable drag-text="Moving [{{item.key}}] {{item.value}} ..." drag-data="item">
+
+                    <span class="glyphicon glyphicon-sort"></span>
+                        </span>
+                        [{{item.key}}] {{item.value}}
+                    </li>
+                </ul>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/sugar/1.4.1/sugar.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular-sanitize.min.js"></script>
+    <script>
+        (function() {
+            var myApp = angular.module('myApp', []);
+            myApp.value('dragDropState', {
+                data: null
+            });
+            myApp.controller('dragDropExampleCtrl', [DragDropExampleController]);
+
+            function DragDropExampleController() {
+                var ctrl = this;
+                ctrl.dataItems = [{
+                    key: 'A',
+                    value: 'One'
+                }, {
+                    key: 'B',
+                    value: 'Two'
+                }, {
+                    key: 'C',
+                    value: 'Three'
+                }, {
+                    key: 'D',
+                    value: 'Four'
+                }, {
+                    key: 'E',
+                    value: 'Five'
+                }, {
+                    key: 'F',
+                    value: 'Six'
+                }, {
+                    key: 'G',
+                    value: 'Seven'
+                }];
+            }
+            DragDropExampleController.prototype.canDropItem = function(data) {
+                return data.dragData.key !== data.dropData.key;
+            };
+            DragDropExampleController.prototype.dropItem = function(data) {
+                var ctrl = this;
+                var updatedList = [];
+                var dragItem = data.dragData;
+                var dropItem = data.dropData;
+                var positionOf = function(item) {
+                    var idx;
+                    for (idx = 0; idx < ctrl.dataItems.length; idx += 1) {
+                        if (ctrl.dataItems[idx].key === item.key) {
+                            return idx;
+                        }
+                    }
+                };
+                ctrl.dataItems.forEach(function(dataItem) {
+                    if (dataItem.key === dropItem.key) {
+                        if (positionOf(dragItem) > positionOf(dropItem)) {
+                            updatedList.push(dragItem);
+                            updatedList.push(dropItem);
+                        } else {
+                            updatedList.push(dropItem);
+                            updatedList.push(dragItem);
+                        }
+                    } else if (dataItem.key !== dragItem.key) {
+                        updatedList.push(dataItem);
+                    }
+                });
+                ctrl.dataItems = updatedList;
+            };
+            myApp.directive('myDraggable', ['dragDropState', DraggableDirective]);
+
+            function DraggableDirective(dragDropState) {
+                return {
+                    restrict: 'A',
+                    scope: {
+                        dragText: '@',
+                        dragData: '='
+                    },
+                    link: function(scope, element, attrs) {
+                        attrs.$set("draggable", true);
+                        element.bind("dragstart", function(evt) {
+                            var dataTransfer = evt.originalEvent.dataTransfer;
+                            var canvas = angular.element("<canvas>")[0];
+                            canvas.width = 250;
+                            canvas.height = 24;
+                            var ctx = canvas.getContext("2d");
+                            ctx.lineWidth = 2;
+                            ctx.moveTo(0, 12);
+                            ctx.lineTo(30, 0);
+                            ctx.lineTo(30, 23);
+                            ctx.lineTo(0, 12);
+                            ctx.stroke();
+                            ctx.lineWidth = 0;
+                            ctx.fillStyle = "#fff";
+                            ctx.fillRect(31, 0, 249, 23);
+                            ctx.fillStyle = "#000";
+                            ctx.font = "16px Arial";
+                            ctx.fillText(scope.dragText, 40, 20);
+                            var dataUrl = canvas.toDataURL();
+                            var img = angular.element("<img>")[0];
+                            img.src = dataUrl;
+                            dataTransfer.effectAllowed = 'move';
+                            dataTransfer.setDragImage(img, 0, 16);
+                            attrs.$addClass('drag');
+                            dragDropState.data = scope.dragData;
+                        });
+                        element.bind("dragend", function(evt) {
+                            attrs.$removeClass('drag');
+                            dragDropState.data = null;
+                        });
+                    }
+                };
+            }
+            myApp.directive('myDroppable', ['dragDropState', DroppableDirective]);
+
+            function DroppableDirective(dragDropState) {
+                return {
+                    restrict: 'A',
+                    scope: {
+                        dropData: '=',
+                        onDrop: '&',
+                        canDrop: '&'
+                    },
+                    link: function(scope, element, attrs) {
+                        element.bind("dragover", function(evt) {
+                            var canDropData = scope.canDrop({
+                                data: {
+                                    dragData: dragDropState.data,
+                                    dropData: scope.dropData
+                                }
+                            });
+                            if (angular.isUndefined(canDropData)) {
+                                canDropData = true;
+                            }
+                            if (canDropData) {
+                                attrs.$addClass('drag-over');
+                                evt.preventDefault();
+                            }
+                        });
+                        element.bind("dragleave", function(evt) {
+                            attrs.$removeClass('drag-over');
+                        });
+                        element.bind("drop", function(evt) {
+                            attrs.$removeClass('drag-over');
+                            scope.$apply(function() {
+                                scope.onDrop({
+                                    data: {
+                                        dragData: dragDropState.data,
+                                        dropData: scope.dropData
+                                    }
+                                });
+                            });
+                        });
+                    }
+                };
+            }
+        })();
+    </script>
+</body>
+
+</html>
